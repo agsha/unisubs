@@ -54,9 +54,9 @@
                 </em>
             {% endif %}
         {% endwith %}
-        {% with user_info.teams.all as user_teams %}
-            <h3>{% trans "Teams" %}</h3>
-            {% if user_teams %}
+        		<h3>{% trans "Teams" %}</h3>
+        {% if teams != None%}
+        	{% with teams as user_teams %}
                 <ul>
                     {% for t in user_teams %}
                     <li>
@@ -64,12 +64,23 @@
                     </li>
                     {% endfor %}
                 </ul>
-            {% else %}
-                <em>
-                    {{ user_info }} {% trans "hasn't joined any teams yet." %}
-                </em>
-            {% endif %}
-        {% endwith %}
+        	
+        	{% endwith %}
+        {% elif user_info.teams.all %}
+        	{% with user_info.teams.all as user_teams %}
+                <ul>
+                    {% for t in user_teams %}
+                    <li>
+                        <a href="{% url teams:dashboard slug=t.slug %}">{{ t }}</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+        	{% endwith %}
+        {% else %}
+				<em>
+				    {{ user_info }} {% trans "hasn't joined any teams yet." %}
+				</em>
+        {% endif %}
     </div>
 
     <div class="view grid_8 omega">

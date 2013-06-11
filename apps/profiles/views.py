@@ -20,7 +20,7 @@ import logging
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import  reverse
+from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, get_object_or_404
@@ -36,6 +36,7 @@ from profiles.forms import (EditUserForm, EditAccountForm, SendMessageForm,
                             EditAvatarForm)
 from profiles.rpc import ProfileApiClass
 from apps.messages.models import Message
+from apps.teams.models import Team
 from utils.orm import LoadRelatedQuerySet
 from utils.rpc import RpcRouter
 from videos.models import (
@@ -85,7 +86,11 @@ def activity(request, user_id=None):
         'user_info': user,
         'can_edit': user == request.user
     }
-
+    
+    # show only those teams that are visible or request.user is a member of
+    if user != request.user:
+        extra_context['teams'] = Team.objects.filter(users=user).filter(Q(is_visible=True) | Q(users=request.user.id)).distinct()
+  
     return object_list(request, queryset=qs, allow_empty=True,
                        paginate_by=settings.ACTIVITIES_ONPAGE,
                        template_name='profiles/view.html',
@@ -141,6 +146,10 @@ def videos(request, user_id=None):
         'user_info': user,
         'query': q
     }
+    # show only those teams that are visible or request.user is a member of
+    if user != request.user:
+        context['teams'] = Team.objects.filter(users=user).filter(Q(is_visible=True) | Q(users=request.user.id)).distinct()
+
     qs = qs._clone(OptimizedQuerySet)
 
     return object_list(request, queryset=qs,
