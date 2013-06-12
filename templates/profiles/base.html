@@ -77,9 +77,9 @@
         	{% endwith %}
         {% endif %}
         {% if teams != None and teams|length_is:"0" or teams == None and user_info.teams.all|length_is:"0"  %}
-				<em>
-				    {{ user_info }} {% trans "hasn't joined any teams yet." %}
-				</em>
+                <em>
+                    {{ user_info }} {% trans "hasn't joined any teams yet." %}
+                </em>
         {% endif %}
     </div>
 
