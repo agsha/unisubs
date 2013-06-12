@@ -64,7 +64,6 @@
                     </li>
                     {% endfor %}
                 </ul>
-        	
         	{% endwith %}
         {% elif user_info.teams.all %}
         	{% with user_info.teams.all as user_teams %}
@@ -76,7 +75,8 @@
                     {% endfor %}
                 </ul>
         	{% endwith %}
-        {% else %}
+        {% endif %}
+        {% if teams != None and teams|length_is:"0" or teams == None and user_info.teams.all|length_is:"0"  %}
 				<em>
 				    {{ user_info }} {% trans "hasn't joined any teams yet." %}
 				</em>
