@@ -110,26 +110,26 @@ class TestViews(TestCase):
         other_user = User.objects.exclude(pk=self.user.pk)[:1].get()
         self._login()
 
-        with patch('profiles.views.object_list', new = Mock(wraps=object_list)) as mock:
+        with patch('profiles.views.object_list', new=Mock(wraps=object_list)) as mock:
             # private teams of others are not visible to us when we are non team members
             self._prepare_team(team, members=[other_user], visibility=False)
-            self.client.post(reverse('profiles:profile', args=(other_user.id,)))
+            self.client.get(reverse('profiles:profile', args=(other_user.id,)))
             self.assertEqual(len(mock.call_args[1]['extra_context']['teams']), 0)
 
             # public teams of others are visible us non members
             self._prepare_team(team, members=[other_user], visibility=True)
-            self.client.post(reverse('profiles:profile', args=(other_user.id,)))
+            self.client.get(reverse('profiles:profile', args=(other_user.id,)))
             self.assertEqual(len(mock.call_args[1]['extra_context']['teams']), 1)
             self.assertEqual(mock.call_args[1]['extra_context']['teams'][0], team)
 
             # private teams of others are visible to us if we are also team members
             self._prepare_team(team, members=[user, other_user], visibility=False)
-            self.client.post(reverse('profiles:profile', args=(other_user.id,)))
+            self.client.get(reverse('profiles:profile', args=(other_user.id,)))
             self.assertEqual(len(mock.call_args[1]['extra_context']['teams']), 1)
             self.assertEqual(mock.call_args[1]['extra_context']['teams'][0], team)
 
             # if viewing own profile, then 'teams' context var not required
             # The template falls back to displaying user.teams.all()
             self._prepare_team(team, members=[user])
-            self.client.post(reverse('profiles:profile', args=(user.id,)))
+            self.client.get(reverse('profiles:profile', args=(user.id,)))
             self.assertNotIn('teams', mock.call_args[1]['extra_context'])
