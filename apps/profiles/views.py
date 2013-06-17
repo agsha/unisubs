@@ -87,7 +87,8 @@ def activity(request, user_id=None):
         'can_edit': user == request.user
     }
     
-    # show only those teams that are visible or request.user is a member of
+    # show only those teams of user that are public or 
+    # teams that have request.user as a member
     if user != request.user:
         extra_context['teams'] = Team.objects.filter(users=user).filter(Q(is_visible=True) | Q(users=request.user.id)).distinct()
   
@@ -146,7 +147,9 @@ def videos(request, user_id=None):
         'user_info': user,
         'query': q
     }
-    # show only those teams that are visible or request.user is a member of
+
+    # show only those teams of user that are public or 
+    # teams that have request.user as a member
     if user != request.user:
         context['teams'] = Team.objects.filter(users=user).filter(Q(is_visible=True) | Q(users=request.user.id)).distinct()
 
