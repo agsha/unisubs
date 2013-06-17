@@ -36,7 +36,7 @@ class TestViews(TestCase):
     def _login(self):
         self.client.login(**self.auth)
 
-    def _prepare_team(self, team, members=[], visibility=True):
+    def _prepare_team(self, team, members=[], visibility=None):
         TeamMember.objects.all().delete()
         map(lambda member:TeamMember.objects.create(team=team, user=member), members)
         if visibility != None:
