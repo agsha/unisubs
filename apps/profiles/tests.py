@@ -17,10 +17,13 @@
 # http://www.gnu.org/licenses/agpl-3.0.html.
 from django.core.urlresolvers import reverse
 from django.test import TestCase
+from django.views.generic.list_detail import object_list
 
 from auth.models import CustomUser as User
+from teams.models import Team, TeamMember
 from videos.models import Video, Action
 
+from mock import patch, Mock
 
 class TestViews(TestCase):
     fixtures = ['test.json']
@@ -33,6 +36,13 @@ class TestViews(TestCase):
     def _login(self):
         self.client.login(**self.auth)
 
+    def _prepare_team(self, team, members=[], visibility=True):
+        TeamMember.objects.all().delete()
+        map(lambda member:TeamMember.objects.create(team=team, user=member), members)
+        if visibility != None:
+            team.is_visible = visibility
+            team.save()
+            
     def setUp(self):
         self.auth = dict(username='admin', password='admin')
         self.user = User.objects.get(username=self.auth['username'])
@@ -93,3 +103,33 @@ class TestViews(TestCase):
         self.assertTrue(self.user.action_set.exists())
 
         self._simple_test('profiles:profile', [self.user.id])
+    
+    def test_team_visibility(self):
+        team = Team.objects.all()[0]
+        user = self.user
+        other_user = User.objects.exclude(pk=self.user.pk)[:1].get()
+        self._login()
+
+        with patch('profiles.views.object_list', new = Mock(wraps=object_list)) as mock:
+            # private teams of others are not visible to us when we are non team members
+            self._prepare_team(team, members=[other_user], visibility=False)
+            self.client.post(reverse('profiles:profile', args=(other_user.id,)))
+            self.assertEqual(len(mock.call_args[1]['extra_context']['teams']), 0)
+
+            # public teams of others are visible us non members
+            self._prepare_team(team, members=[other_user], visibility=True)
+            self.client.post(reverse('profiles:profile', args=(other_user.id,)))
+            self.assertEqual(len(mock.call_args[1]['extra_context']['teams']), 1)
+            self.assertEqual(mock.call_args[1]['extra_context']['teams'][0], team)
+
+            # private teams of others are visible to us if we are also team members
+            self._prepare_team(team, members=[user, other_user], visibility=False)
+            self.client.post(reverse('profiles:profile', args=(other_user.id,)))
+            self.assertEqual(len(mock.call_args[1]['extra_context']['teams']), 1)
+            self.assertEqual(mock.call_args[1]['extra_context']['teams'][0], team)
+
+            # if viewing own profile, then 'teams' context var not required
+            # The template falls back to displaying user.teams.all()
+            self._prepare_team(team, members=[user])
+            self.client.post(reverse('profiles:profile', args=(user.id,)))
+            self.assertNotIn('teams', mock.call_args[1]['extra_context'])
